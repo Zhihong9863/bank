@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"github.com/techschool/bank/db/util"
+	"github.com/techschool/bank/util"
 )
 
 /**
@@ -18,8 +18,11 @@ require.Equal(t, expected, actual) 确保实际值与预期值相等，如果不
 
 // 这是一个辅助函数，用于在测试中创建一个具有随机属性的账户。它使用 account.sql.go 中的 CreateAccount 方法来实际创建账户。
 func createRandomAccount(t *testing.T) Account {
+
+	user := createRandomUser(t)
+
 	arg := CreateAccountParams{
-		Owner:    util.RandomOwner(),
+		Owner:    user.Username,
 		Balance:  util.RandomMoney(),
 		Currency: util.RandomCurrency(),
 	}
@@ -93,11 +96,13 @@ func TestDeleteAccount(t *testing.T) {
 // 这个测试用例创建多个账户，并使用 ListAccounts 方法检索一部分账户，测试分页功能是否正常工作。
 func TestListAccounts(t *testing.T) {
 
+	var lastAccount Account
 	for i := 0; i < 10; i++ {
-		createRandomAccount(t)
+		lastAccount = createRandomAccount(t)
 	}
 
 	arg := ListAccountsParams{
+		Owner:  lastAccount.Owner,
 		Limit:  5,
 		Offset: 0,
 	}
@@ -108,5 +113,6 @@ func TestListAccounts(t *testing.T) {
 
 	for _, account := range accounts {
 		require.NotEmpty(t, account)
+		require.Equal(t, lastAccount.Owner, account.Owner)
 	}
 }

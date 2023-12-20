@@ -12,19 +12,24 @@ execTx 方法是 Store 的核心，它允许你在一个事务中安全地执行
 如果中途出现错误，它会回滚事务，这意味着所有在事务中进行的更改都不会应用到数据库。
 */
 
+type Store interface {
+	Querier
+	TransferTx(ctx context.Context, arg TransferTxParams) (TransferTxResult, error)
+}
+
 // SQLStore provides all functions to execute SQL queries and transactions
 // Store 是一个结构体，它嵌入了 Queries 结构体（这是由 sqlc 自动生成的，提供了一系列与数据库交互的方法）。
 // 它还包含了一个指向 sql.DB 的指针，sql.DB 是 Go 标准库中的一个结构体，用于表示数据库连接。
-type Store struct {
-	*Queries
+type SQLStore struct {
 	db *sql.DB
+	*Queries
 }
 
 // NewStore 是一个函数，它创建并返回一个新的 Store 实例。
 // 它接受一个 *sql.DB（数据库连接）作为参数，并用这个连接初始化 Store 结构体中的 db 字段和 Queries 字段。
 // NewStore creates a new store
-func NewStore(db *sql.DB) *Store {
-	return &Store{
+func NewStore(db *sql.DB) Store {
+	return &SQLStore{
 		db:      db,
 		Queries: New(db),
 	}
@@ -39,7 +44,7 @@ func NewStore(db *sql.DB) *Store {
 // 这个函数接受一个指向 Queries 结构体的指针，并返回一个错误。
 // 这意味着你可以传递任何这样的函数给 execTx，这个函数会在事务中执行一些数据库操作，
 // 并且这些操作要么全部成功，要么（在出错时）全部不执行。
-func (store *Store) execTx(ctx context.Context, fn func(*Queries) error) error {
+func (store *SQLStore) execTx(ctx context.Context, fn func(*Queries) error) error {
 	//这一行开始一个新的数据库事务。BeginTx 方法来自 Go 的 sql 包，用于在给定的上下文（ctx）中开始一个新的事务。
 	//如果事务成功开始，它返回一个事务对象 tx。如果出现错误，如数据库连接问题，它返回一个错误。
 	tx, err := store.db.BeginTx(ctx, nil)
@@ -88,7 +93,7 @@ type TransferTxResult struct {
 // ctx context.Context: 用于传递上下文信息，比如请求的截止时间、取消信号等。
 // arg TransferTxParams: 包含执行转账所需的参数，如转出账户ID、转入账户ID和转账金额。
 // 返回值：TransferTxResult 包含转账操作的结果，和一个 error 值表示可能发生的错误。
-func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (TransferTxResult, error) {
+func (store *SQLStore) TransferTx(ctx context.Context, arg TransferTxParams) (TransferTxResult, error) {
 	var result TransferTxResult
 
 	//启动事务：
