@@ -96,9 +96,9 @@ func (q *Queries) ListTransfers(ctx context.Context, arg ListTransfersParams) ([
 		}
 		items = append(items, i)
 	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
+	// if err := rows.Close(); err != nil {
+	// 	return nil, err
+	// }
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
