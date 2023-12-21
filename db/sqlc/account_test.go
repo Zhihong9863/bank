@@ -95,7 +95,6 @@ func TestDeleteAccount(t *testing.T) {
 
 // 这个测试用例创建多个账户，并使用 ListAccounts 方法检索一部分账户，测试分页功能是否正常工作。
 func TestListAccounts(t *testing.T) {
-
 	var lastAccount Account
 	for i := 0; i < 10; i++ {
 		lastAccount = createRandomAccount(t)
