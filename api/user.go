@@ -129,6 +129,14 @@ type loginUserResponse struct {
 使用请求中的Username查询数据库以获取用户信息。如果用户不存在或发生其他数据库错误，返回相应的HTTP响应。
 调用CheckPassword函数验证请求中的密码与数据库中散列存储的密码是否匹配。如果不匹配，返回HTTP 401（未授权）响应。
 如果密码验证成功，使用tokenMaker创建新的访问令牌，并设置适当的有效期。如果创建令牌失败，返回HTTP 500（服务器内部错误）响应。
+
+在你的服务器代码中，当用户通过验证后，他们会收到一个访问令牌和一个refresh token。
+访问令牌用于短期访问，并且在设定的AccessTokenDuration后会过期。
+而refresh token具有更长的有效期（由RefreshTokenDuration定义），
+当访问令牌过期时，用户可以使用它来请求新的访问令牌，而不需要重新输入凭据。
+这个过程通常在用户的设备或客户端上自动进行，从而为用户提供无缝的体验。
+此外，refresh token通常与一些元数据一起存储在服务器的数据库中，
+例如用户代理、客户端IP地址和过期时间，这有助于进一步的安全性检查和审计。
 */
 func (server *Server) loginUser(ctx *gin.Context) {
 	var req loginUserRequest
@@ -163,40 +171,46 @@ func (server *Server) loginUser(ctx *gin.Context) {
 		return
 	}
 
-	// refreshToken, refreshPayload, err := server.tokenMaker.CreateToken(
-	// 	user.Username,
-	// 	user.Role,
-	// 	server.config.RefreshTokenDuration,
-	// )
-	// if err != nil {
-	// 	ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-	// 	return
-	// }
+	refreshToken, refreshPayload, err := server.tokenMaker.CreateToken(
+		user.Username,
+		user.Role,
+		server.config.RefreshTokenDuration,
+	)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
 
-	// session, err := server.store.CreateSession(ctx, db.CreateSessionParams{
-	// 	ID:           refreshPayload.ID,
-	// 	Username:     user.Username,
-	// 	RefreshToken: refreshToken,
-	// 	UserAgent:    ctx.Request.UserAgent(),
-	// 	ClientIp:     ctx.ClientIP(),
-	// 	IsBlocked:    false,
-	// 	ExpiresAt:    refreshPayload.ExpiredAt,
-	// })
-	// if err != nil {
-	// 	ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-	// 	return
-	// }
+	/*
+		“session”是一个用于跟踪用户状态的概念。它是服务器与特定用户之间一系列交互的状态容器。
+		用户每次与服务器交互时，服务器都能通过会话信息识别是哪个用户，并提供个性化的响应。
+		通常，会话信息会包含用户的登录状态、角色权限、偏好设置等。
+	*/
+
+	session, err := server.store.CreateSession(ctx, db.CreateSessionParams{
+		ID:           refreshPayload.ID,
+		Username:     user.Username,
+		RefreshToken: refreshToken,
+		UserAgent:    ctx.Request.UserAgent(),
+		ClientIp:     ctx.ClientIP(),
+		IsBlocked:    false,
+		ExpiresAt:    refreshPayload.ExpiredAt,
+	})
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
 
 	//使用成功验证的用户信息创建loginUserResponse实例。
 	//封装了访问令牌、访问令牌过期时间和用户信息。
 	//返回HTTP 200（成功）响应，携带loginUserResponse实例作为JSON体
 	rsp := loginUserResponse{
-		// SessionID:             session.ID,
-		AccessToken:          accessToken,
-		AccessTokenExpiresAt: accessPayload.ExpiredAt,
-		// RefreshToken:          refreshToken,
-		// RefreshTokenExpiresAt: refreshPayload.ExpiredAt,
-		User: newUserResponse(user),
+		SessionID:             session.ID,
+		AccessToken:           accessToken,
+		AccessTokenExpiresAt:  accessPayload.ExpiredAt,
+		RefreshToken:          refreshToken,
+		RefreshTokenExpiresAt: refreshPayload.ExpiredAt,
+		User:                  newUserResponse(user),
 	}
 	ctx.JSON(http.StatusOK, rsp)
 }
