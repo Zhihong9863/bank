@@ -1,0 +1,16 @@
+apiVersion: v1 
+kind: ConfigMap 
+metadata: 
+  name: aws-auth 
+  namespace: kube-system 
+data: 
+  mapUsers: | 
+    - userarn: arn:aws:iam::665294208057:user/github-ci
+      username: github-ci
+      groups:
+        - system:masters
+
+
+# 这个配置是Kubernetes的ConfigMap对象，用于定义EKS集群中的AWS IAM 
+# (Identity and Access Management) 用户和角色如何映射到Kubernetes RBAC 
+# (Role-Based Access Control) 权限。
