@@ -1,0 +1,50 @@
+/*这个文件定义了一个基础的User消息，这是你将在多个服务中重复使用的数据结构。
+它包含用户的基本信息，如用户名、全名和电子邮件地址。
+此外，它还使用了google.protobuf.Timestamp来记录密码更改和用户创建的时间戳。
+*/
+
+syntax = "proto3";
+
+package pb;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/techschool/bank/pb";
+
+message User {
+    string username = 1;
+    string full_name = 2;
+    string email = 3;
+    google.protobuf.Timestamp password_changed_at = 4;
+    google.protobuf.Timestamp created_at = 5;
+}
+
+/*
+项目结构
+gapi 文件夹: 通常包含用于定义和实现 gRPC API 服务端逻辑的 Go 代码。在这个项目中，server.go 定义了一个 Server 结构体，这个结构体实现了 gRPC 服务接口，并提供了服务的具体逻辑。
+
+proto 文件夹: 包含 .proto 文件，这些是用于定义 gRPC 服务接口和消息格式的协议缓冲区文件。这些定义了如何通过网络传输信息以及服务的方法签名。
+
+pb 文件夹: 存放由 protoc 编译器自动生成的代码，这些代码基于 .proto 文件。它为 gRPC 服务提供了 Go 语言的桩代码，这些代码可以被服务端和客户端用来实现和调用 gRPC 方法。
+
+evans: 是一个交互式的 gRPC 客户端工具，它用于测试和调试 gRPC 服务。通过这个工具，可以手动执行 gRPC 调用，以验证服务是否正确响应。
+
+main.go: 这是应用程序的入口文件，包含了启动服务的逻辑。在这个文件中，首先加载配置，然后创建数据库连接，接着构造 gRPC 服务器，并启动它以便开始监听网络请求。
+
+流程
+定义服务: 使用 .proto 文件定义 gRPC 服务的接口和消息格式。例如，定义了 CreateUser 和 LoginUser 这两个 RPC 方法。
+
+生成代码: 使用 protoc 编译器和相应的 Go 插件从 .proto 文件生成 pb 文件夹中的代码。
+
+实现服务: 在 gapi/server.go 中实现了 .proto 文件定义的服务。Server 结构体包括这些方法的具体实现。
+
+启动服务: 在 main.go 中，创建一个 Server 实例，注册这个实例到 gRPC 服务器，并启动服务器，这样它就可以接受客户端的调用请求。
+
+测试服务: 使用 evans 或其他 gRPC 客户端工具调用服务，并检查服务的响应是否正确。
+
+总结
+在这个项目中，gapi 文件夹下的 server.go 负责实现定义在 .proto 文件中的 gRPC 服务逻辑。
+proto 文件夹包含服务定义，pb 文件夹包含自动生成的代码，用于在 Go 语言环境中实现 gRPC 协议。
+evans 是一个命令行工具，用于与 gRPC 服务进行交互，验证其功能。main.go 是启动整个 gRPC 服务的主要入口点，
+它负责配置服务并使其在线上可用。
+*/

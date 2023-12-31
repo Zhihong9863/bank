@@ -11,8 +11,8 @@ FROM golang:1.21-alpine3.18 AS builder
 WORKDIR /app
 COPY . .
 RUN go build -o main main.go
-RUN apk add curl
-RUN curl -L https://github.com/golang-migrate/migrate/releases/download/v4.16.2/migrate.linux-amd64.tar.gz | tar xvz
+# RUN apk add curl
+# RUN curl -L https://github.com/golang-migrate/migrate/releases/download/v4.16.2/migrate.linux-amd64.tar.gz | tar xvz
         
 
 # 这一行开始新的阶段，从Docker Hub上拉取一个Alpine Linux 3.18的基础镜像用于运行应用。
@@ -27,11 +27,11 @@ RUN curl -L https://github.com/golang-migrate/migrate/releases/download/v4.16.2/
 FROM alpine:3.18
 WORKDIR /app
 COPY --from=builder /app/main .
-COPY --from=builder /app/migrate ./migrate
+# COPY --from=builder /app/migrate ./migrate
 COPY app.env .
 COPY start.sh .
 COPY wait-for.sh .
-COPY db/migration ./migration
+COPY db/migration ./db/migration
 
 
 # EXPOSE 8080 9090: 声明容器在运行时监听8080和9090端口，这通常是应用服务的端口。

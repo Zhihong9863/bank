@@ -1,0 +1,28 @@
+/*
+这个文件定义了与用户登录相关的请求和响应消息。
+LoginUserRequest包含用户名和密码，
+而LoginUserResponse则提供了登录成功后的用户信息以及相关的会话和令牌信息。
+*/
+
+syntax = "proto3";
+
+package pb;
+
+import "user.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/techschool/bank/pb";
+
+message LoginUserRequest {
+    string username = 1;
+    string password = 2;
+}
+
+message LoginUserResponse {
+    User user = 1;
+    string session_id = 2;
+    string access_token = 3;
+    string refresh_token = 4;
+    google.protobuf.Timestamp access_token_expires_at = 5;
+    google.protobuf.Timestamp refresh_token_expires_at = 6;
+}
