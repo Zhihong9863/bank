@@ -1,0 +1,25 @@
+/*
+这个文件定义了与创建新用户相关的请求和响应消息。
+CreateUserRequest消息用于封装创建新用户所需的信息，
+而CreateUserResponse消息则包含了新创建的用户信息，通过引用User消息。
+*/
+
+
+syntax = "proto3";
+
+package pb;
+
+import "user.proto";
+
+option go_package = "github.com/techschool/bank/pb";
+
+message CreateUserRequest {
+    string username = 1;
+    string full_name = 2;
+    string email = 3;
+    string password = 4;
+}
+
+message CreateUserResponse {
+    User user = 1;
+}
