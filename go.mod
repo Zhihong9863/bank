@@ -2,8 +2,6 @@ module github.com/techschool/bank
 
 go 1.21
 
-toolchain go1.21.5
-
 require (
 	github.com/golang-migrate/migrate/v4 v4.17.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.10.0
