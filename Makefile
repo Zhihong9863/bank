@@ -40,6 +40,7 @@ server:
 mock:
 	mockgen -package mockdb -destination db/mock/store.go github.com/techschool/bank/db/sqlc Store
 
+
 proto:
 	rm -f pb/*.go
 	rm -f doc/swagger/*.swagger.json
