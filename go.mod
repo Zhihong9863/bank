@@ -2,7 +2,7 @@ module github.com/techschool/bank
 
 go 1.21
 
-toolchain go1.21.5
+// toolchain go1.21.5
 
 require (
 	github.com/golang-migrate/migrate/v4 v4.17.0
