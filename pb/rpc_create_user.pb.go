@@ -1,4 +1,4 @@
-//
+
 //这个文件定义了与创建新用户相关的请求和响应消息。
 //CreateUserRequest消息用于封装创建新用户所需的信息，
 //而CreateUserResponse消息则包含了新创建的用户信息，通过引用User消息。

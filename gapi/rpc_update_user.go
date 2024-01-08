@@ -3,6 +3,7 @@ package gapi
 import (
 	"context"
 	"database/sql"
+	"log"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -28,10 +29,11 @@ UpdateUserRequest 是由 protobuf 文件定义的消息类型，它携带更新�
 */
 func (server *Server) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb.UpdateUserResponse, error) {
 
-	// authPayload, err := server.authorizeUser(ctx, []string{util.BankerRole, util.DepositorRole})
-	// if err != nil {
-	// 	return nil, unauthenticatedError(err)
-	// }
+	authPayload, err := server.authorizeUser(ctx, []string{util.BankerRole, util.DepositorRole})
+	if err != nil {
+		return nil, unauthenticatedError(err)
+	}
+	log.Printf("UpdateUser called with request: %v", req)
 
 	/*
 		验证请求: validateUpdateUserRequest 函数检查请求是否有效，
@@ -44,9 +46,9 @@ func (server *Server) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest)
 		return nil, invalidArgumentError(violations)
 	}
 
-	// if authPayload.Role != util.BankerRole && authPayload.Username != req.GetUsername() {
-	// 	return nil, status.Errorf(codes.PermissionDenied, "cannot update other user's info")
-	// }
+	if authPayload.Role != util.BankerRole && authPayload.Username != req.GetUsername() {
+		return nil, status.Errorf(codes.PermissionDenied, "cannot update other user's info")
+	}
 
 	/*
 		更新操作: 方法构建了一个 db.UpdateUserParams 结构体，
@@ -90,6 +92,7 @@ func (server *Server) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest)
 
 	user, err := server.store.UpdateUser(ctx, arg)
 	if err != nil {
+		log.Printf("UpdateUser error: %v", err)
 		if err == sql.ErrNoRows {
 			return nil, status.Errorf(codes.NotFound, "user not found")
 		}
@@ -99,6 +102,7 @@ func (server *Server) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest)
 	/*
 		响应: 如果用户更新成功，它会返回一个 *pb.UpdateUserResponse，其中包含了更新后的用户信息。
 	*/
+	log.Println("UpdateUser method completed successfully")
 	rsp := &pb.UpdateUserResponse{
 		User: convertUser(user),
 	}

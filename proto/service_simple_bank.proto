@@ -1,7 +1,7 @@
 /*
 这个文件是整个银行服务的核心，它使用前面定义的消息类型来定义SimpleBank服务。
-这个服务有两个RPC方法：CreateUser和LoginUser，
-分别用于创建新用户和用户登录。
+这个服务有四个RPC方法：CreateUser和LoginUser，update, verify email
+分别用于创建新用户和用户登录。更新用户以及验证邮件
 
 这些文件共同构成了SimpleBank应用的gRPC服务接口
 */
@@ -15,6 +15,7 @@ import "google/api/annotations.proto";
 import "rpc_create_user.proto";
 import "rpc_login_user.proto";
 import "rpc_update_user.proto";
+import "rpc_verify_email.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
 
 option go_package = "github.com/techschool/bank/pb";
@@ -60,6 +61,15 @@ service SimpleBank {
         option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
             description: "Use this API to login user and get access token & refresh token";
             summary: "Login user";
+        };
+    }
+    rpc VerifyEmail (VerifyEmailRequest) returns (VerifyEmailResponse) {
+        option (google.api.http) = {
+            get: "/v1/verify_email"
+        };
+        option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+            description: "Use this API to verify user's email address";
+            summary: "Verify email";
         };
     }
 

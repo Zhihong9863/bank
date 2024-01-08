@@ -7,7 +7,6 @@
 package pb
 
 import (
-	// pb "github.com/techschool/bank/pb"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
