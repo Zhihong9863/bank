@@ -13,6 +13,8 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/hibiken/asynq"
+	_ "github.com/jackc/pgx/v5"
 	_ "github.com/lib/pq"
 	"github.com/rakyll/statik/fs"
 	"github.com/rs/zerolog"
@@ -21,8 +23,10 @@ import (
 	db "github.com/techschool/bank/db/sqlc"
 	_ "github.com/techschool/bank/doc/statik"
 	"github.com/techschool/bank/gapi"
+	"github.com/techschool/bank/mail"
 	"github.com/techschool/bank/pb"
 	"github.com/techschool/bank/util"
+	"github.com/techschool/bank/worker"
 
 	// "github.com/techschool/simplebank/worker"
 
@@ -51,16 +55,34 @@ func main() {
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	}
 
-	conn, err := sql.Open(config.DBDriver, config.DBSource)
+	connPool, err := sql.Open(config.DBDriver, config.DBSource)
 	if err != nil {
 		log.Fatal().Err(err).Msg("cannot connect to db")
 	}
 
 	runDBMigration(config.MigrationURL, config.DBSource)
 
-	store := db.NewStore(conn)
-	go runGatewayServer(config, store)
-	runGrpcServer(config, store)
+	/*
+		初始化数据库存储（db.NewStore(conn)）。
+		配置Redis客户端（asynq.RedisClientOpt）。
+		创建任务分发器（taskDistributor）。
+		启动任务处理器（go runTaskProcessor(redisOpt, store)）。
+		启动网关服务器（go runGatewayServer(config, store, taskDistributor)）。
+		运行gRPC服务器（runGrpcServer(config, store, taskDistributor)）。
+
+		这些步骤整合了异步工作处理器到web服务器中，确保了当web服务器运行时，
+		后台任务处理器也同时运行。
+	*/
+	store := db.NewStore(connPool)
+
+	redisOpt := asynq.RedisClientOpt{
+		Addr: config.RedisAddress,
+	}
+
+	taskDistributor := worker.NewRedisTaskDistributor(redisOpt)
+	go runTaskProcessor(config, redisOpt, store)
+	go runGatewayServer(config, store, taskDistributor)
+	runGrpcServer(config, store, taskDistributor)
 }
 
 func runDBMigration(migrationURL string, dbSource string) {
@@ -76,8 +98,29 @@ func runDBMigration(migrationURL string, dbSource string) {
 	log.Info().Msg("db migrated successfully")
 }
 
-func runGrpcServer(config util.Config, store db.Store) {
-	server, err := gapi.NewServer(config, store)
+/*
+这个函数启动了任务处理器，它将从Redis队列中取出任务并处理它们。
+可以假设在生产环境中，任务处理器会使用电子邮件发送器（如mailer := mail.NewGmailSender(...)）
+来发送验证邮件。
+*/
+func runTaskProcessor(config util.Config, redisOpt asynq.RedisClientOpt, store db.Store) {
+	mailer := mail.NewGmailSender(config.EmailSenderName, config.EmailSenderAddress, config.EmailSenderPassword)
+	taskProcessor := worker.NewRedisTaskProcessor(redisOpt, store, mailer)
+	log.Info().Msg("start task processor")
+	err := taskProcessor.Start()
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to start task processor")
+	}
+}
+
+/*
+这两个函数启动了gRPC服务器和网关服务器。
+gRPC服务器处理来自其他服务或客户端的gRPC请求，
+而网关服务器将HTTP请求转换为gRPC请求。
+这两个服务器都使用taskDistributor来分发任务，例如用户注册后发送验证邮件的任务。
+*/
+func runGrpcServer(config util.Config, store db.Store, taskDistributor worker.TaskDistributor) {
+	server, err := gapi.NewServer(config, store, taskDistributor)
 	if err != nil {
 		log.Fatal().Err(err).Msg("cannot create server")
 	}
@@ -111,8 +154,8 @@ func runGrpcServer(config util.Config, store db.Store) {
 5.并行运行：在 main 函数中，通过 go runGatewayServer(config, store)
 6.异步地运行了 HTTP 服务器，同时主线程在运行 gRPC 服务器。
 */
-func runGatewayServer(config util.Config, store db.Store) {
-	server, err := gapi.NewServer(config, store)
+func runGatewayServer(config util.Config, store db.Store, taskDistributor worker.TaskDistributor) {
+	server, err := gapi.NewServer(config, store, taskDistributor)
 	if err != nil {
 		log.Fatal().Err(err).Msg("cannot create server")
 	}
