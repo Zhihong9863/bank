@@ -83,7 +83,7 @@ func TestGetAccountAPI(t *testing.T) {
 			},
 		},
 		{
-			//模拟当请求的账户不存在于数据库中时的情况。它期望数据库层返回sql.ErrNoRows错误，HTTP状态码为404（NotFound）。
+			//模拟当请求的账户不存在于数据库中时的情况。它期望数据库层返回db.ErrRecordNotFound错误，HTTP状态码为404（NotFound）。
 			name:      "NotFound",
 			accountID: account.ID,
 			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
@@ -93,7 +93,7 @@ func TestGetAccountAPI(t *testing.T) {
 				store.EXPECT().
 					GetAccount(gomock.Any(), gomock.Eq(account.ID)).
 					Times(1).
-					Return(db.Account{}, sql.ErrNoRows)
+					Return(db.Account{}, db.ErrRecordNotFound)
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusNotFound, recorder.Code)

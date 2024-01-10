@@ -40,7 +40,7 @@ COPY db/migration ./db/migration
 # 这个脚本会被设置为容器的默认入口点，意味着它会首先被执行，
 # 并且CMD中的/app/main会作为参数传递给start.sh脚本。
 
-EXPOSE 8080 
+EXPOSE 8080 9090
 CMD [ "/app/main" ]
 ENTRYPOINT [ "/app/start.sh" ]
 

@@ -5,32 +5,6 @@ metadata:
 spec:
   controller: k8s.io/ingress-nginx
 
----
-
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: bank-ingress-http
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt
-spec:
-  ingressClassName: nginx
-  rules:
-  - host: "api.simple-bank.org"
-    http:
-      paths:
-      - pathType: Prefix
-        path: "/"
-        backend:
-          service:
-            name: bank-api-service
-            port:
-              number: 80
-  tls:
-  - hosts:
-    - api.simple-bank.org
-    secretName: bank-api-cert
-
 
 # Ingress 在 Kubernetes 中用于管理外部访问到集群内服务的访问，
 # 它可以提供负载均衡、SSL 终止和基于名称的虚拟托管等功能。
