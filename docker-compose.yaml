@@ -17,14 +17,14 @@ services:
       - POSTGRES_DB=bank
 
   # 映射宿主机的5432端口到容器的5432端口，允许您从宿主机访问PostgreSQL服务。
-  #   ports:
-  #     - "5432:5432"
+    ports:
+      - "5432:5432"
   # 将data-volume卷挂载到容器内的/var/lib/postgresql/data目录，这样可以保持数据库数据持久化。
-  #   volumes:
-  #     - data-volume:/var/lib/postgresql/data
+    volumes:
+      - data-volume:/var/lib/postgresql/data
   # image: 使用redis:7-alpine镜像，这是一个Redis内存存储的轻量级版本。
-  # redis:
-  #   image: redis:7-alpine
+  redis:
+    image: redis:7-alpine
 
   api:
   # build: 定义了如何构建api服务的Docker镜像，指定了构建上下文和Dockerfile文件的位置。
@@ -34,14 +34,15 @@ services:
     # ports: 映射宿主机的8080和9090端口到容器的8080和9090端口，允许您从宿主机访问API服务。
     ports:
       - "8080:8080"
-      # - "9090:9090"
+      - "9090:9090"
     # environment: 设置环境变量，包括数据库源（DB_SOURCE）和Redis地址（REDIS_ADDRESS）。
     environment:
       - DB_SOURCE=postgresql://root:secret@postgres:5432/bank?sslmode=disable
+      - REDIS_ADDRESS=redis:6379
 # depends_on: 定义了服务依赖，确保在启动api服务之前启动postgres和redis服务。
     depends_on:
       - postgres
-      # - redis
+      - redis
 # entrypoint: 定义了容器启动前执行的脚本，这里使用了wait-for.sh脚本来等待postgres服务准备就绪。
     entrypoint:
       [
@@ -53,8 +54,8 @@ services:
 # command: 定义了容器启动后执行的命令，这里是执行/app/main
     command: [ "/app/main" ]
 # volumes: 定义了用于服务的卷，这里定义了一个名为data-volume的卷，用于PostgreSQL数据的持久化存储。
-# volumes:
-#   data-volume:
+volumes:
+  data-volume:
 
 
 
