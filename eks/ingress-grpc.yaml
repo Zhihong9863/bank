@@ -22,4 +22,4 @@ spec:
   tls:
   - hosts:
     - gapi.simplebanktest.com
-    secretName: simple-bank-gapi-cert
+    secretName: bank-gapi-cert
